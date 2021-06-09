@@ -5,12 +5,16 @@ import re
 import scrapy
 from scrapy import Request
 
+from ArticleSpider.items import JoBoleArticlespiderItem
+from ArticleSpider.utils import common
+
 class JobbleSpider(scrapy.Spider):
     name = 'jobble'
     allowed_domains = ['kb.cnblogs.com']
     start_urls = ['https://kb.cnblogs.com/']
 
     def parse(self, response): #
+        article_item = JoBoleArticlespiderItem()
         re_selector = response.xpath('//div[@class="aiticle_item"]/div[@class="message_info"]')
         for post_node in re_selector:
             selector = etree.HTML(post_node.extract())
@@ -18,10 +22,8 @@ class JobbleSpider(scrapy.Spider):
             re_title = selector.xpath('//div[@class="msg_title"]/p/a/text()')[0]
             re_classify = selector.xpath('//div[@class="msg_title"]/p/span/text()')[0]
             re_text = selector.xpath('//div[@class="msg_summary"]/p/text()')[0]
-            # print(re_url)
-            # print(re_title,re_classify)
-            # print(re_text)
-            yield Request(url=parse.urljoin(response.url,re_url),meta={"front_image_url":re_classify},callback=self.parse_detail)
+            article_item["re_classify"] = re_classify
+            yield Request(url=parse.urljoin(response.url,re_url),meta={"article_item":article_item},callback=self.parse_detail)
 
         #提取下一页
         # next_url = response.xpath('//div[@id="pager"]/a[last()]/text()').extract_first("")
@@ -31,6 +33,7 @@ class JobbleSpider(scrapy.Spider):
 
 
     def parse_detail(self,response):
+        article_item = response.meta.get("article_item","")
         re_url = response.url
         re_title = response.xpath('//div[@id="left_content_pages"]/h1[@class="contents_header"]/a/text()').extract_first("")
         re_info = response.xpath('//div[@id="left_content_pages"]/div[@class="contents_info"]//text()').extract()
@@ -40,5 +43,15 @@ class JobbleSpider(scrapy.Spider):
         release_time = re.search(r'发布时间:(.*?)阅读', re_info).group().replace('发布时间:', '').replace('阅读', '').split()[0]
         re_read = re.search(r'阅读:(.*?)推荐', re_info).group().replace('阅读:', '').replace('推荐', '').split()[0]
         # re_recommend = re.search(r'推荐:(.*?)原文链接', re_info).group().replace('推荐:', '').replace('原文链接', '').split()[0]
-        re_text = response.xpath('//div[@id="ArticleCnt"]/p/text()').extract()
+        re_text = response.xpath('//div[@id="ArticleCnt"]//text()').extract()
+
+        article_item["re_title"] = re_title
+        article_item["re_url"] = re_url
+        article_item["re_author"] = re_author
+        article_item["re_source"] = re_source
+        article_item["release_time"] = release_time
+        article_item["re_read"] = re_read
+        article_item["re_text"] = re_text
+        article_item["url_object_id"] = common.get_md5(re_url)
         print(re_url,re_info)
+        yield article_item
