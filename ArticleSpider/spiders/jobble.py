@@ -44,6 +44,7 @@ class JobbleSpider(scrapy.Spider):
         re_read = re.search(r'阅读:(.*?)推荐', re_info).group().replace('阅读:', '').replace('推荐', '').split()[0]
         # re_recommend = re.search(r'推荐:(.*?)原文链接', re_info).group().replace('推荐:', '').replace('原文链接', '').split()[0]
         re_text = response.xpath('//div[@id="ArticleCnt"]//text()').extract()
+        re_images_url = response.xpath('//div[@id="ArticleCnt"]/p/img/@src').extract_first("")
 
         article_item["re_title"] = re_title
         article_item["re_url"] = re_url
@@ -51,7 +52,8 @@ class JobbleSpider(scrapy.Spider):
         article_item["re_source"] = re_source
         article_item["release_time"] = release_time
         article_item["re_read"] = re_read
-        article_item["re_text"] = re_text
+        article_item["re_text"] = "".join(re_text)
         article_item["url_object_id"] = common.get_md5(re_url)
-        print(re_url,re_info)
+        article_item["re_images_url"] = [re_images_url]
+        # print(re_url,re_info)
         yield article_item
