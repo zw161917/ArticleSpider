@@ -38,11 +38,19 @@ class JobbleSpider(scrapy.Spider):
         re_title = response.xpath('//div[@id="left_content_pages"]/h1[@class="contents_header"]/a/text()').extract_first("")
         re_info = response.xpath('//div[@id="left_content_pages"]/div[@class="contents_info"]//text()').extract()
         re_info = ''.join(re_info)
-        re_author = re.search(r'作者:(.*?)来源',re_info).group().replace('作者:','').replace('来源','').split()[0]
-        re_source = re.search(r'来源:(.*?)发布时间', re_info).group().replace('来源:', '').replace('发布时间', '').split()[0]
-        release_time = re.search(r'发布时间:(.*?)阅读', re_info).group().replace('发布时间:', '').replace('阅读', '').split()[0]
-        re_read = re.search(r'阅读:(.*?)推荐', re_info).group().replace('阅读:', '').replace('推荐', '').split()[0]
-        # re_recommend = re.search(r'推荐:(.*?)原文链接', re_info).group().replace('推荐:', '').replace('原文链接', '').split()[0]
+        if re.search(r'作者:(.*?)来源',re_info):
+            re_author = re.search(r'作者:(.*?)来源',re_info).group().replace('作者:','').replace('来源','').split()[0]
+            re_source = re.search(r'来源:(.*?)发布时间', re_info).group().replace('来源:', '').replace('发布时间', '').split()[0]
+            release_time = re.search(r'发布时间:(.*?)阅读', re_info).group().replace('发布时间:', '').replace('阅读', '').split()[0]
+            re_read = re.search(r'阅读:(.*?)推荐', re_info).group().replace('阅读:', '').replace('推荐', '').split()[0]
+            re_recommend = response.xpath('//div[@id="btnDetailDigg"]/span/text()').extract()[0]
+        else:
+            re_author = re.search(r'作者:(.*?)发布时间', re_info).group().replace('作者:', '').replace('发布时间', '').split()[0]
+            re_source = ""
+            release_time = re.search(r'发布时间:(.*?)阅读', re_info).group().replace('发布时间:', '').replace('阅读', '').split()[0]
+            re_read = re.search(r'阅读:(.*?)推荐', re_info).group().replace('阅读:', '').replace('推荐', '').split()[0]
+            re_recommend = response.xpath('//div[@id="btnDetailDigg"]/span/text()').extract()[0]
+
         re_text = response.xpath('//div[@id="ArticleCnt"]//text()').extract()
         re_images_url = response.xpath('//div[@id="ArticleCnt"]/p/img/@src').extract_first("")
 
@@ -55,5 +63,6 @@ class JobbleSpider(scrapy.Spider):
         article_item["re_text"] = "".join(re_text)
         article_item["url_object_id"] = common.get_md5(re_url)
         article_item["re_images_url"] = [re_images_url]
+        article_item["re_recommend"] = re_recommend
         # print(re_url,re_info)
         yield article_item

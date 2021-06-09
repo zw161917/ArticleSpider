@@ -23,3 +23,4 @@ class JoBoleArticlespiderItem(scrapy.Item):
     re_text = scrapy.Field()
     re_classify = scrapy.Field()
     re_images_url = scrapy.Field()
+    re_recommend = scrapy.Field()
